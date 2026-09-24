@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QueryVisualizer } from "@/components/QueryVisualizer";
 import { simulatePlan } from "@/lib/plan";
+import { toast } from "sonner";
+import { endpoints } from "@/lib/live";
+import { errorMessage } from "@/lib/api";
 
 export const Route = createFileRoute("/anomalies")({
   head: () => ({
@@ -20,6 +23,8 @@ export const Route = createFileRoute("/anomalies")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { severity?: Severity } =>
+    s["severity"] === "critical" || s["severity"] === "warning" || s["severity"] === "info" ? { severity: s["severity"] } : {},
   component: Anomalies,
 });
 
@@ -27,7 +32,18 @@ const RANGE_MS = { "1h": 3.6e6, "6h": 2.16e7, "24h": 8.64e7 } as const;
 
 function Anomalies() {
   const alerts = useSim((s) => s.alerts);
-  const [sev, setSev] = useState<"all" | Severity>("all");
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const sev: "all" | Severity = search.severity ?? "all";
+  const setSev = (v: "all" | Severity) => void navigate({ search: v === "all" ? {} : { severity: v }, replace: true });
+  const acknowledge = async (id: string) => {
+    sim.acknowledge(id); // optimistic
+    if (sim.get().source !== "live") return;
+    try { await endpoints.acknowledge(id); } catch (e) {
+      sim.hydrate({ alerts: sim.get().alerts.map((a) => (a.id === id ? { ...a, acknowledged: false } : a)) });
+      toast.error(errorMessage(e));
+    }
+  };
   const [node, setNode] = useState("all");
   const [range, setRange] = useState<keyof typeof RANGE_MS>("24h");
   const [q, setQ] = useState("");
@@ -75,7 +91,7 @@ function Anomalies() {
         <Panel title={`Alert feed · ${filtered.length}`}>
           <div className="max-h-[640px] space-y-2 overflow-auto pr-1">
             {filtered.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">No anomalies match these filters.</p>}
-            {filtered.slice(0, 100).map((a) => <AlertCard key={a.id} alert={a} onAck={() => sim.acknowledge(a.id)} onInvestigate={() => setInv(a.query)} />)}
+            {filtered.slice(0, 100).map((a) => <AlertCard key={a.id} alert={a} onAck={() => void acknowledge(a.id)} onInvestigate={() => setInv(a.query)} />)}
           </div>
         </Panel>
         <div className="space-y-3">
