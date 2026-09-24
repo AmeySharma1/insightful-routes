@@ -16,6 +16,8 @@ export const Route = createFileRoute("/anomalies")({
       { name: "description", content: "Real-time ML-detected query anomalies: N+1 patterns, volume spikes and new query shapes." },
       { property: "og:title", content: "Anomalies — pg-router-ai" },
       { property: "og:description", content: "Real-time ML-detected query anomalies: N+1 patterns, volume spikes and new query shapes." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Anomalies,

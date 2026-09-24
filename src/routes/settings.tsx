@@ -20,6 +20,8 @@ export const Route = createFileRoute("/settings")({
       { name: "description", content: "Manage database nodes, AI models, alert thresholds and preferences." },
       { property: "og:title", content: "Settings — pg-router-ai" },
       { property: "og:description", content: "Manage database nodes, AI models, alert thresholds and preferences." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Settings,

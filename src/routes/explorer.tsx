@@ -17,6 +17,8 @@ export const Route = createFileRoute("/explorer")({
       { name: "description", content: "Collaborative SQL editor with routing preview, execution plans and AI optimization suggestions." },
       { property: "og:title", content: "Query Explorer — pg-router-ai" },
       { property: "og:description", content: "Collaborative SQL editor with routing preview, execution plans and AI optimization suggestions." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Explorer,

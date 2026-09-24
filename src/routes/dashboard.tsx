@@ -15,6 +15,8 @@ export const Route = createFileRoute("/dashboard")({
       { name: "description", content: "Live overview of query volume, latency, routing and anomalies across your PostgreSQL cluster." },
       { property: "og:title", content: "Dashboard — pg-router-ai" },
       { property: "og:description", content: "Live overview of query volume, latency, routing and anomalies across your PostgreSQL cluster." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Dashboard,
