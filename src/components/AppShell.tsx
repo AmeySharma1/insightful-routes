@@ -8,7 +8,7 @@ import {
 import { useSim } from "@/lib/sim";
 import { StatusDot } from "@/components/common";
 import { Button } from "@/components/ui/button";
-import { authRequest, authStore } from "@/lib/auth";
+import { signOut as endSession } from "@/lib/auth";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: Gauge },
@@ -32,8 +32,7 @@ function Shell({ children }: { children: ReactNode }) {
   const connected = useSim((s) => s.connected);
   const openAlerts = useSim((s) => s.alerts.filter((a) => !a.acknowledged && a.severity === "critical").length);
   const signOut = async () => {
-    try { await authRequest("/auth/logout"); } finally {
-      authStore.set(null);
+    try { await endSession(); } finally {
       await navigate({ to: "/auth", search: { mode: "login" }, replace: true });
     }
   };
