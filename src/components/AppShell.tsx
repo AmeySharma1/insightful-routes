@@ -1,12 +1,14 @@
-import { Link, useHydrated, useRouterState } from "@tanstack/react-router";
+import { Link, useHydrated, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Activity, AlertTriangle, Code2, Gauge, History, Settings, Database } from "lucide-react";
+import { Activity, AlertTriangle, Code2, Gauge, History, Settings, Database, LogOut } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useSim } from "@/lib/sim";
 import { StatusDot } from "@/components/common";
+import { Button } from "@/components/ui/button";
+import { authRequest, authStore } from "@/lib/auth";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: Gauge },
@@ -24,10 +26,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function Shell({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const path = useRouterState({ select: (r) => r.location.pathname });
   const nodes = useSim((s) => s.nodes);
   const connected = useSim((s) => s.connected);
   const openAlerts = useSim((s) => s.alerts.filter((a) => !a.acknowledged && a.severity === "critical").length);
+  const signOut = async () => {
+    try { await authRequest("/auth/logout"); } finally {
+      authStore.set(null);
+      await navigate({ to: "/auth", search: { mode: "login" }, replace: true });
+    }
+  };
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -80,6 +89,7 @@ function Shell({ children }: { children: ReactNode }) {
             <div className="ml-auto flex items-center gap-2 font-mono text-xs text-muted-foreground">
               <span className={`size-2 rounded-full ${connected ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
               {connected ? "live · simulated" : "paused"}
+              <Button variant="ghost" size="icon" onClick={() => void signOut()} aria-label="Sign out" title="Sign out"><LogOut /></Button>
             </div>
           </header>
           <main className="mosaic flex-1 p-4 md:p-6">{children}</main>
