@@ -79,7 +79,7 @@ function Dashboard() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left font-mono text-[11px] uppercase text-muted-foreground">
-                <tr><th className="pb-2 font-normal">Query</th><th className="pb-2 font-normal">Node</th><th className="pb-2 text-right font-normal">Duration</th><th className="pb-2 text-right font-normal">When</th></tr>
+                <tr><th className="w-full pb-2 font-normal">Query</th><th className="pb-2 font-normal">Node</th><th className="pb-2 text-right font-normal">Duration</th><th className="pb-2 text-right font-normal">When</th></tr>
               </thead>
               <tbody>
                 {slow.slice(0, 7).map((q) => (
