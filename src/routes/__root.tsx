@@ -139,7 +139,7 @@ function ProtectedApp({ children }: { children: ReactNode }) {
     let active = true;
     void refreshSession().then((user) => {
       if (!active) return;
-      if (!user) void navigate({ to: "/auth", replace: true });
+      if (!user) void navigate({ to: "/auth", search: { mode: "login" }, replace: true });
       else setReady(true);
     });
     return () => { active = false; };

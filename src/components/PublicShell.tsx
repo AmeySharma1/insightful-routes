@@ -21,12 +21,12 @@ export function PublicHeader() {
         {links.map(([n,label,to]) => <Link key={to} to={to} className="tech-label text-foreground/70 hover:text-primary"><span className="mr-1 text-primary/50">{n}.</span>{label}</Link>)}
       </nav>
       <div className="ml-auto hidden items-center gap-2 md:flex">
-        <Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button>
+        <Button asChild variant="outline"><Link to="/auth" search={{ mode: "login" }}>Sign in</Link></Button>
         <Button asChild><Link to="/auth" search={{ mode: "signup" }}>Start routing <ArrowRight /></Link></Button>
       </div>
       <Button className="ml-auto md:hidden" variant="ghost" size="icon" onClick={() => setOpen(v => !v)} aria-label="Toggle navigation">{open ? <X/> : <Menu/>}</Button>
     </div>
-    {open && <nav className="border-t bg-background p-4 md:hidden">{links.map(([n,label,to]) => <Link key={to} to={to} onClick={() => setOpen(false)} className="tech-label block border-b py-4">{n}. {label}</Link>)}<Button asChild className="mt-4 w-full"><Link to="/auth">Open console</Link></Button></nav>}
+    {open && <nav className="border-t bg-background p-4 md:hidden">{links.map(([n,label,to]) => <Link key={to} to={to} onClick={() => setOpen(false)} className="tech-label block border-b py-4">{n}. {label}</Link>)}<Button asChild className="mt-4 w-full"><Link to="/auth" search={{ mode: "login" }}>Open console</Link></Button></nav>}
   </header>;
 }
 
