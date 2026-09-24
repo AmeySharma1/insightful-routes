@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useSim } from "@/lib/sim";
+import { useDashboardMetrics } from "@/hooks/use-backend";
 import { AlertCard, PageHeader, Panel, Stat, chartTheme } from "@/components/common";
 import { fmtMs, fmtNum, fmtTime, timeAgo, truncate } from "@/lib/format";
 import { QueryVisualizer } from "@/components/QueryVisualizer";
@@ -23,10 +23,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const series = useSim((s) => s.series);
-  const nodes = useSim((s) => s.nodes);
-  const slow = useSim((s) => s.slow);
-  const alerts = useSim((s) => s.alerts);
+  const { series, nodes, slow, alerts, live } = useDashboardMetrics();
   const [drill, setDrill] = useState<string | null>(null);
   const last = series[series.length - 1]!;
   const conns = nodes.reduce((a, n) => a + n.connections, 0);
@@ -36,7 +33,7 @@ function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Cluster overview" sub="1 primary · 2 replicas · updates every 2s" />
+      <PageHeader title="Cluster overview" sub={`${nodes.filter((n) => n.role === "primary").length} primary · ${nodes.filter((n) => n.role === "replica").length} replicas · ${live ? "live from backend" : "simulated feed"}`} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Connections" value={String(conns)} hint={`of ${nodes.reduce((a, n) => a + n.maxConnections, 0)} max`} />
         <Stat label="Queries / sec" value={fmtNum(last.qps)} hint="rolling 2s" />
