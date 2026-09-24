@@ -4,13 +4,13 @@
 export interface PlanNode {
   id: string;
   type: string;
-  relation?: string;
-  index?: string;
+  relation?: string | undefined;
+  index?: string | undefined;
   cost: number;
   estRows: number;
   actualRows: number;
   timeMs: number;
-  filter?: string;
+  filter?: string | undefined;
   children: PlanNode[];
 }
 
@@ -68,8 +68,8 @@ export function simulatePlan(sql: string): PlanNode {
   };
   let node: PlanNode;
   if (hasJoin) {
-    const a = scan(t[0], 0);
-    const b = scan(t[1], 1);
+    const a = scan(t[0]!, 0);
+    const b = scan(t[1]!, 1);
     const hash: PlanNode = { id: "hash", type: "Hash", cost: b.cost * 1.1, estRows: b.estRows, actualRows: b.actualRows, timeMs: b.timeMs * 1.2, children: [b] };
     node = { id: "join", type: "Hash Join", cost: a.cost + hash.cost + 400, estRows: a.estRows, actualRows: a.actualRows, timeMs: a.timeMs + hash.timeMs + 6, filter: sql.match(/on\s+([^\s]+\s*=\s*[^\s]+)/i)?.[1], children: [a, hash] };
   } else node = scan(t[0] ?? "table", 0);

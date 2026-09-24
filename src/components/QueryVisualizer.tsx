@@ -6,7 +6,7 @@ import { fmtMs } from "@/lib/format";
 
 const W = 190, H = 62, GX = 26, GY = 50;
 
-interface Laid { node: PlanNode; x: number; y: number; parent?: Laid }
+interface Laid { node: PlanNode; x: number; y: number; parent?: Laid | undefined }
 
 function layout(root: PlanNode, collapsed: Set<string>) {
   const out: Laid[] = [];
@@ -18,7 +18,7 @@ function layout(root: PlanNode, collapsed: Set<string>) {
     if (!kids.length) me.x = leaf++ * (W + GX);
     else {
       const laid = kids.map((k) => walk(k, depth + 1, me));
-      me.x = (laid[0].x + laid[laid.length - 1].x) / 2;
+      me.x = (laid[0]!.x + laid[laid.length - 1]!.x) / 2;
     }
     return me;
   };

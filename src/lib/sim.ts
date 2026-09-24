@@ -70,7 +70,7 @@ interface State {
 let seq = 0;
 const uid = () => `${Date.now().toString(36)}-${(seq++).toString(36)}`;
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
-const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+const pick = <T,>(a: T[]): T => a[Math.floor(Math.random() * a.length)]!;
 
 function initial(): State {
   const now = Date.now();
