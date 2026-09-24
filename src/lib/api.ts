@@ -49,7 +49,7 @@ export async function api<T>(path: string, init: RequestInit & { retries?: numbe
     if (attempt > 0) await sleep(500 * 2 ** (attempt - 1)); // 500ms, 1s, 2s
     let res: Response;
     try {
-      res = await fetch(base + path, { ...rest, headers, body: json !== undefined ? JSON.stringify(json) : rest.body, credentials: "include" });
+      res = await fetch(base + path, { ...rest, headers, body: json !== undefined ? JSON.stringify(json) : (rest.body ?? null), credentials: "include" });
     } catch {
       lastErr = new ApiError(MESSAGES.network, 0, "NETWORK");
       continue;

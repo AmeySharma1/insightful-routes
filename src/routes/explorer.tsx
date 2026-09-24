@@ -117,7 +117,7 @@ function Explorer() {
   const remote = useAIAnalysis(live ? collab.text : "", result?.ms);
   const local = useMemo(() => analyze(collab.text, result?.plan ?? simulatePlan(collab.text)), [collab.text, result?.plan]);
   const suggestions: Suggestion[] = remote.data
-    ? remote.data.map((r, i) => ({ id: `ai-${i}-${r.type}`, kind: r.type, title: r.type.replace(/_/g, " ").toLowerCase(), detail: r.message, confidence: r.confidence, improvement: parseFloat(r.estimatedImprovement ?? "0") || 0, sql: r.sql }))
+    ? remote.data.map((r, i) => ({ id: `ai-${i}-${r.type}`, kind: r.type, title: r.type.replace(/_/g, " ").toLowerCase(), detail: r.message, confidence: r.confidence, improvement: parseFloat(r.estimatedImprovement ?? "0") || 0, ...(r.sql ? { sql: r.sql } : {}) }))
     : local;
   const [nl, setNl] = useState("");
   const convert = useAction(async () => {
