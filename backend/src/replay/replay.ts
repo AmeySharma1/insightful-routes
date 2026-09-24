@@ -139,7 +139,7 @@ export const compareResults = (
   replayDurationMs,
   originalRowCount: original.rowCount,
   replayRowCount,
-  rowCountMatches: original.rowCount === replayRowCount,
+  rowCountMatches: original.rowCount < 0 || original.rowCount === replayRowCount, // -1 = unknown
   slowerBy: Math.round((replayDurationMs - original.durationMs) * 100) / 100,
 });
 

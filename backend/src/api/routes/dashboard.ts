@@ -177,7 +177,7 @@ dashboardRouter.post("/replay/upload", upload.single("file"), wrap((req) => {
   if (!rows.length) throw new ValidationError("Expected JSON lines with sql, durationMs and timestamp");
   const t0 = new Date(String(rows[0]!["timestamp"] ?? 0)).getTime() || 0;
   const normalized = rows.map((r) => JSON.stringify({
-    sql: r["sql"] ?? r["query"], durationMs: Number(r["durationMs"] ?? r["duration"] ?? 5), rowCount: Number(r["rowCount"] ?? 0),
+    sql: r["sql"] ?? r["query"], durationMs: Number(r["durationMs"] ?? r["duration"] ?? 5), rowCount: r["rowCount"] !== undefined ? Number(r["rowCount"]) : -1,
     offsetMs: r["offsetMs"] !== undefined ? Number(r["offsetMs"]) : (new Date(String(r["timestamp"] ?? 0)).getTime() || 0) - t0,
   })).join("\n");
   const uploadId = uuid();
