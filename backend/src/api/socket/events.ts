@@ -4,6 +4,7 @@ import { appConfig } from "../../config/app";
 import { bus } from "../../events";
 import { getMetrics } from "../../monitors/metrics-collector";
 import { executeQuery } from "../../router/query-router";
+import { getPoolStats } from "../../router/pool-manager";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "../../types/socket";
 import { logger } from "../../utils/logger";
 import { uuid } from "../../utils/helpers";
@@ -116,7 +117,7 @@ export const registerSocketEvents = (httpServer: HttpServer): Server => {
     if (!io || !runtimeSettings.liveUpdates || io.engine.clientsCount === 0) return;
     const m = await getMetrics(10_000);
     const ts = new Date().toISOString();
-    io.emit("metrics:update", { queriesPerSecond: Math.round((m.queriesPerMinute / 60) * 100) / 100, activeConnections: 0, timestamp: ts });
+    io.emit("metrics:update", { queriesPerSecond: Math.round((m.queriesPerMinute / 60) * 100) / 100, activeConnections: getPoolStats().reduce((a, p) => a + p.total - p.idle, 0), timestamp: ts });
     io.emit("metrics:timeseries", { metric: "latency", dataPoint: { timestamp: ts, value: m.avgDurationMs } });
   }, 2000).unref();
 
