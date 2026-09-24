@@ -9,7 +9,7 @@ async function toSessionUser():Promise<SessionUser|null>{
   const {data:{session}}=await supabase.auth.getSession();
   if(!session?.user?.email){authStore.set(null);return null;}
   authStore.set(session.access_token);
-  const displayName=String(session.user.user_metadata?.display_name??session.user.email.split("@")[0]);
+  const displayName=String(session.user.user_metadata?.["display_name"]??session.user.email.split("@")[0]);
   const {data:profile}=await supabase.from("profiles").select("display_name,avatar_url,preferences").eq("user_id",session.user.id).maybeSingle();
   if(!profile){await supabase.from("profiles").insert({user_id:session.user.id,display_name:displayName});}
   return {id:session.user.id,email:session.user.email,displayName:profile?.display_name??displayName,avatarUrl:profile?.avatar_url??null,preferences:(profile?.preferences as Record<string,unknown>|null)??{},role:"viewer"};
