@@ -8,7 +8,17 @@ import { PageHeader, Panel } from "@/components/common";
 import { QueryVisualizer } from "@/components/QueryVisualizer";
 import { analyze, routeFor, simulatePlan, simulateRows, type PlanNode, type Suggestion } from "@/lib/plan";
 import { fmtMs, fmtTime } from "@/lib/format";
-import { sim } from "@/lib/sim";
+import { sim, useSim } from "@/lib/sim";
+import { api, errorMessage } from "@/lib/api";
+import { socketService } from "@/lib/socket";
+import { parseExplainJson } from "@/lib/plan";
+import { useAIAnalysis, useAction } from "@/hooks/use-backend";
+import { Input } from "@/components/ui/input";
+import { Loader2, Wand2 } from "lucide-react";
+
+const ROOM = "query-editor-default";
+interface ExecRes { results: Record<string, unknown>[]; rowCount: number; executionTime: string; routedTo: string; queryPlan?: unknown }
+interface HistoryRes { queries: { id: string; sql: string; executedAt: string; duration: number | string; status: string }[] }
 
 export const Route = createFileRoute("/explorer")({
   head: () => ({
@@ -53,6 +63,14 @@ function useCollab(initial: string) {
       if (m.type === "bye") setPeers((p) => { const n = { ...p }; delete n[m.id]; return n; });
     };
     c.postMessage({ type: "hello", peer: self });
+    // Cross-machine collaboration through the backend when connected.
+    socketService.emit("editor:join", { room: ROOM, user: self });
+    const offs = [
+      socketService.subscribe("editor:sync", (m: { room: string; text: string; from: string }) => m.room === ROOM && m.from !== self.id && setText(m.text)),
+      socketService.subscribe("cursor:update", (m: { room: string; peer: Peer }) => m.room === ROOM && m.peer.id !== self.id && setPeers((p) => ({ ...p, [m.peer.id]: { ...m.peer, seen: Date.now() } }))),
+      socketService.subscribe("user:joined", (m: { room: string; user: Peer }) => m.room === ROOM && m.user.id !== self.id && setPeers((p) => ({ ...p, [m.user.id]: { ...m.user, seen: Date.now() } }))),
+      socketService.subscribe("user:left", (m: { room: string; userId: string }) => m.room === ROOM && setPeers((p) => { const n = { ...p }; delete n[m.userId]; return n; })),
+    ];
     const hb = setInterval(() => {
       c.postMessage({ type: "presence", peer: self });
       setPeers((p) => Object.fromEntries(Object.entries(p).filter(([, v]) => Date.now() - v.seen < 6000)));
@@ -60,13 +78,14 @@ function useCollab(initial: string) {
     const snap = setInterval(() => setVersions((v) => (v[0]?.sql === textRef.current ? v : [{ t: Date.now(), sql: textRef.current, by: self.name }, ...v].slice(0, 20))), 30000);
     const bye = () => c.postMessage({ type: "bye", id: self.id });
     window.addEventListener("beforeunload", bye);
-    return () => { bye(); clearInterval(hb); clearInterval(snap); window.removeEventListener("beforeunload", bye); c.close(); };
+    return () => { offs.forEach((o) => o()); socketService.emit("editor:leave", { room: ROOM, userId: self.id }); bye(); clearInterval(hb); clearInterval(snap); window.removeEventListener("beforeunload", bye); c.close(); };
   }, []);
 
   const update = (t: string, pos: number) => {
     setText(t);
     ch.current?.postMessage({ type: "edit", text: t });
-    if (me) { me.pos = pos; ch.current?.postMessage({ type: "presence", peer: me }); }
+    if (me) socketService.emit("editor:sync", { room: ROOM, text: t, from: me.id });
+    if (me) { me.pos = pos; ch.current?.postMessage({ type: "presence", peer: me }); socketService.emit("cursor:update", { room: ROOM, peer: me }); }
   };
   const snapshot = () => me && setVersions((v) => [{ t: Date.now(), sql: textRef.current, by: me.name }, ...v].slice(0, 20));
   return { text, update, peers: Object.values(peers), me, versions, snapshot, setText: (t: string) => update(t, 0) };
@@ -91,9 +110,42 @@ function Explorer() {
   const [applied, setApplied] = useState<Set<string>>(new Set());
   const [compare, setCompare] = useState<Suggestion | null>(null);
   const route = useMemo(() => routeFor(collab.text), [collab.text]);
-  const suggestions = useMemo(() => analyze(collab.text, result?.plan ?? simulatePlan(collab.text)), [collab.text, result?.plan]);
+  const live = useSim((st) => st.source === "live");
+  const remote = useAIAnalysis(live ? collab.text : "", result?.ms);
+  const local = useMemo(() => analyze(collab.text, result?.plan ?? simulatePlan(collab.text)), [collab.text, result?.plan]);
+  const suggestions: Suggestion[] = remote.data
+    ? remote.data.map((r, i) => ({ id: `ai-${i}-${r.type}`, kind: r.type, title: r.type.replace(/_/g, " ").toLowerCase(), detail: r.message, confidence: r.confidence, improvement: parseFloat(r.estimatedImprovement ?? "0") || 0, sql: r.sql }))
+    : local;
+  const [nl, setNl] = useState("");
+  const convert = useAction(async () => {
+    const r = await api<{ sql: string; confidence: number; explanation: string }>("/api/ai/convert", { method: "POST", json: { naturalLanguage: nl } });
+    collab.setText(r.sql);
+    toast.success(`SQL generated (${Math.round(r.confidence * 100)}% confidence)`, { description: r.explanation });
+  });
+  const [history, setHistory] = useState<HistoryRes["queries"]>([]);
+  const loadHistory = () => api<HistoryRes>("/api/queries/history?limit=50", { retries: 1 }).then((r) => setHistory(r.queries)).catch(() => {});
+  useEffect(() => { if (live) void loadHistory(); }, [live]);
+
+  const runRemote = async (explain: boolean) => {
+    setRunning(true);
+    try {
+      const r = await api<ExecRes>("/api/query/execute", { method: "POST", json: { sql: collab.text, useExplain: explain, targetNode: "auto" } });
+      const rows = r.results ?? [];
+      const columns = rows[0] ? Object.keys(rows[0]) : ["rows_affected"];
+      setResult({
+        columns, rows: rows.length ? rows : [{ rows_affected: r.rowCount }], node: r.routedTo, reason: "routed by backend",
+        ms: parseFloat(r.executionTime) || 0, plan: r.queryPlan ? parseExplainJson(r.queryPlan) : simulatePlan(collab.text),
+        messages: [`[${fmtTime(Date.now())}] routed to ${r.routedTo}`, `[${fmtTime(Date.now())}] ${r.rowCount} rows · ${r.executionTime}`],
+      });
+      setTab(explain ? "plan" : "results");
+      void loadHistory();
+    } catch (e) {
+      toast.error(errorMessage(e), { action: { label: "Retry", onClick: () => void runRemote(explain) } });
+    } finally { setRunning(false); }
+  };
 
   const run = (explain: boolean) => {
+    if (live) return void runRemote(explain);
     setRunning(true);
     const t0 = performance.now();
     setTimeout(() => {
@@ -133,11 +185,17 @@ function Explorer() {
               />
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={() => run(false)} disabled={running}><Play className="size-3.5" />Run</Button>
+              <Button size="sm" onClick={() => run(false)} disabled={running}>{running ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}Run</Button>
               <Button size="sm" variant="secondary" onClick={() => run(true)} disabled={running}><FileSearch className="size-3.5" />Explain analyze</Button>
               <Button size="sm" variant="ghost" onClick={() => { collab.snapshot(); toast.success("Version saved"); }}><History className="size-3.5" />Save version</Button>
               <span className="ml-auto text-xs text-muted-foreground">⌘/Ctrl + Enter</span>
             </div>
+            {live && (
+              <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (nl.trim()) void convert.run(); }}>
+                <Input value={nl} onChange={(e) => setNl(e.target.value)} placeholder="Describe a query in plain English…" className="h-8 font-mono text-xs" aria-label="Natural language query" />
+                <Button size="sm" variant="secondary" disabled={convert.pending || !nl.trim()}>{convert.pending ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}To SQL</Button>
+              </form>
+            )}
             <div className="mt-3 flex flex-wrap gap-1.5">
               {sim.sampleQueries.slice(1, 6).map((q) => (
                 <button key={q} onClick={() => collab.setText(q + ";")} className="max-w-[220px] truncate rounded border px-2 py-1 font-mono text-[11px] text-muted-foreground hover:bg-muted">{q}</button>
@@ -181,7 +239,7 @@ function Explorer() {
         </div>
 
         <div className="space-y-3">
-          <Panel title="AI insights" action={<Sparkles className="size-3.5 text-primary" />}>
+          <Panel title={remote.data ? "AI insights · backend" : "AI insights"} action={remote.loading ? <Loader2 className="size-3.5 animate-spin text-primary" /> : <Sparkles className="size-3.5 text-primary" />}>
             <div className="max-h-[520px] space-y-2 overflow-auto">
               {suggestions.length === 0 && <p className="text-sm text-muted-foreground">No issues found for this query.</p>}
               {suggestions.map((s) => (
@@ -208,6 +266,18 @@ function Explorer() {
               ))}
             </div>
           </Panel>
+          {history.length > 0 && (
+            <Panel title="Query history">
+              <div className="max-h-64 space-y-1.5 overflow-auto">
+                {history.map((h) => (
+                  <button key={h.id} onClick={() => collab.setText(h.sql)} className="block w-full rounded border px-2 py-1.5 text-left hover:bg-muted">
+                    <div className="flex font-mono text-[11px] text-muted-foreground"><span>{fmtTime(new Date(h.executedAt).getTime())}</span><span className={`ml-auto ${h.status === "success" ? "text-success" : "text-destructive"}`}>{h.status} · {h.duration}</span></div>
+                    <div className="truncate font-mono text-xs">{h.sql}</div>
+                  </button>
+                ))}
+              </div>
+            </Panel>
+          )}
           <Panel title="Version history">
             {collab.versions.length === 0 ? <p className="text-xs text-muted-foreground">Snapshots are saved every 30s or on demand.</p> : (
               <div className="space-y-1.5">
