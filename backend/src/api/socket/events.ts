@@ -4,18 +4,25 @@ import { appConfig } from "../../config/app";
 import { bus } from "../../events";
 import { getMetrics } from "../../monitors/metrics-collector";
 import { executeQuery } from "../../router/query-router";
+import { getPoolStats } from "../../router/pool-manager";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "../../types/socket";
 import { logger } from "../../utils/logger";
 import { uuid } from "../../utils/helpers";
 import { verifyAccessToken } from "../../auth/tokens";
+import { devAuthBypass, verifySupabaseToken } from "../../auth/supabase";
+import { runtimeSettings } from "../../config/runtime";
+import { onAlert } from "../../monitors/alert-store";
 
 type AppSocket = Socket<ClientToServerEvents, ServerToClientEvents, never, SocketData>;
 
 let io: Server<ClientToServerEvents, ServerToClientEvents, never, SocketData> | null = null;
 
 /** Fully verifies signed, unexpired access tokens from the handshake. */
-const verifyHandshake = (token: unknown): { userId: string | null; ok: boolean } => {
+const verifyHandshake = async (token: unknown): Promise<{ userId: string | null; ok: boolean }> => {
+  if (devAuthBypass()) return { userId: "dev-user", ok: true };
   if (typeof token !== "string" || !token.length) return { userId: null, ok: false };
+  const hosted = await verifySupabaseToken(token);
+  if (hosted) return { userId: hosted.userId, ok: true };
   try {
     const decoded = verifyAccessToken(token);
     return { userId: typeof decoded.sub === "string" ? decoded.sub : null, ok: typeof decoded.sub === "string" };
@@ -29,8 +36,8 @@ export const registerSocketEvents = (httpServer: HttpServer): Server => {
     cors: { origin: appConfig.corsOrigin, methods: ["GET", "POST"] },
   });
 
-  io.use((socket, next) => {
-    const { userId, ok } = verifyHandshake(socket.handshake.auth?.token);
+  io.use(async (socket, next) => {
+    const { userId, ok } = await verifyHandshake(socket.handshake.auth?.token);
     if (!ok) return next(new Error("Unauthorized socket handshake"));
     socket.data.userId = userId;
     socket.data.sessionId = `ws-${uuid()}`;
@@ -74,14 +81,45 @@ export const registerSocketEvents = (httpServer: HttpServer): Server => {
       }
     });
 
+    // Collaborative editor rooms: relay text, cursors and presence to room members.
+    const rooms = new Map<string, string>(); // room -> userId
+    socket.on("editor:join", ({ room, user }) => {
+      if (typeof room !== "string" || !room.startsWith("query-editor-")) return;
+      void socket.join(room);
+      rooms.set(room, user?.id ?? socket.id);
+      socket.to(room).emit("user:joined", { room, user });
+    });
+    socket.on("editor:leave", ({ room, userId }) => {
+      void socket.leave(room);
+      rooms.delete(room);
+      socket.to(room).emit("user:left", { room, userId });
+    });
+    socket.on("editor:sync", (msg) => { if (socket.rooms.has(msg.room)) socket.to(msg.room).emit("editor:sync", msg); });
+    socket.on("cursor:update", (msg) => { if (socket.rooms.has(msg.room)) socket.to(msg.room).emit("cursor:update", msg); });
+
     socket.on("disconnect", (reason) => {
+      for (const [room, userId] of rooms) socket.to(room).emit("user:left", { room, userId });
       if (metricsTimer) clearInterval(metricsTimer);
       logger.info("Socket disconnected", { id: socket.id, reason });
     });
   });
 
   bus.onEvent("anomaly:detected", (alert) => io?.to("alerts").emit("alert:anomaly", alert));
-  bus.onEvent("health:updated", (nodes) => io?.emit("health:update", nodes));
+  bus.onEvent("health:updated", (nodes) => {
+    io?.emit("health:update", nodes);
+    for (const n of nodes) io?.emit("node:status", { nodeId: n.nodeId, status: n.healthy ? "healthy" : "unhealthy", timestamp: n.lastCheckedAt });
+  });
+  // Dashboard events
+  onAlert((a) => io?.emit("alert:new", a));
+  bus.onEvent("replay:progress", (p) => io?.emit("replay:progress", p));
+  bus.onEvent("replay:complete", (p) => io?.emit("replay:complete", p));
+  setInterval(async () => {
+    if (!io || !runtimeSettings.liveUpdates || io.engine.clientsCount === 0) return;
+    const m = await getMetrics(10_000);
+    const ts = new Date().toISOString();
+    io.emit("metrics:update", { queriesPerSecond: Math.round((m.queriesPerMinute / 60) * 100) / 100, activeConnections: getPoolStats().reduce((a, p) => a + p.total - p.idle, 0), timestamp: ts });
+    io.emit("metrics:timeseries", { metric: "latency", dataPoint: { timestamp: ts, value: m.avgDurationMs } });
+  }, 2000).unref();
 
   logger.info("Socket.io handlers registered");
   return io;
