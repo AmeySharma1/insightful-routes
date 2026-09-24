@@ -22,12 +22,5 @@ export async function signInWithGoogle(){
   if(result.redirected)return null;
   return toSessionUser();
 }
-export async function signUp(email:string,password:string,displayName:string){
-  const {error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${window.location.origin}/auth/callback`}});
-  if(error)throw new Error(error.message);
-}
-export async function signIn(email:string,password:string){const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw new Error(error.message);return toSessionUser();}
-export async function requestPasswordReset(email:string){const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}/reset-password?recovery=1`});if(error)throw new Error(error.message);}
-export async function updatePassword(password:string){const {error}=await supabase.auth.updateUser({password});if(error)throw new Error(error.message);return toSessionUser();}
 export async function signOut(){await supabase.auth.signOut({scope:"local"});authStore.set(null);}
 export async function refreshSession(){try{return await toSessionUser();}catch{authStore.set(null);return null;}}
