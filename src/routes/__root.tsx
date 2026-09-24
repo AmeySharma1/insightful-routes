@@ -5,15 +5,17 @@ import {
   createRootRouteWithContext,
   useRouter,
   useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { refreshSession } from "@/lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -119,7 +121,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const path = useRouterState({ select: (state) => state.location.pathname });
   const publicPaths = ["/", "/product", "/security", "/pricing", "/auth", "/reset-password"];
-  const content = publicPaths.includes(path) ? <Outlet /> : <AppShell><Outlet /></AppShell>;
+  const content = publicPaths.includes(path) ? <Outlet /> : <ProtectedApp><Outlet /></ProtectedApp>;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -128,4 +130,20 @@ function RootComponent() {
       <Toaster theme="light" />
     </QueryClientProvider>
   );
+}
+
+function ProtectedApp({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void refreshSession().then((user) => {
+      if (!active) return;
+      if (!user) void navigate({ to: "/auth", replace: true });
+      else setReady(true);
+    });
+    return () => { active = false; };
+  }, [navigate]);
+  if (!ready) return <div className="mosaic grid min-h-screen place-items-center"><span className="tech-label text-primary">VERIFYING SESSION…</span></div>;
+  return <AppShell>{children}</AppShell>;
 }

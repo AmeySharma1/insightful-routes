@@ -20,7 +20,7 @@ export const createApp = (): express.Express => {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: appConfig.corsOrigin }));
+  app.use(cors({ origin: appConfig.corsOrigin, credentials: true }));
   app.use(express.json({ limit: "1mb" }));
 
   app.use((req, res, next) => {
@@ -51,8 +51,8 @@ export const createApp = (): express.Express => {
     }),
   );
 
-  app.use("/api", queriesRouter);
   app.use("/api", authRouter);
+  app.use("/api", requireAuth, queriesRouter);
   app.use("/api", requireAuth, healthRouter);
   app.use("/api", requireAuth, metricsRouter);
   app.use("/api", requireAuth, aiRouter);
