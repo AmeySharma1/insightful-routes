@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useHydrated, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Activity, AlertTriangle, Code2, Gauge, History, Settings, Database } from "lucide-react";
 import {
@@ -18,6 +18,12 @@ const items = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const hydrated = useHydrated();
+  if (!hydrated) return <div className="grid min-h-screen place-items-center font-mono text-sm text-muted-foreground">connecting to router…</div>;
+  return <Shell>{children}</Shell>;
+}
+
+function Shell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const nodes = useSim((s) => s.nodes);
   const connected = useSim((s) => s.connected);
