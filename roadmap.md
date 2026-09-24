@@ -5,4 +5,4 @@
 - [x] Add profiles, access/refresh tokens, OTP verification, and password recovery
 - [x] Add BullMQ/Redis Brevo email delivery
 - [x] Secure Socket.io authentication with signed access tokens
-- [ ] Verify frontend views and backend tests/type checks
+- [x] Verify frontend views and backend tests/type checks
