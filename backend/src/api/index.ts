@@ -14,6 +14,7 @@ import { healthRouter } from "./routes/health";
 import { metricsRouter } from "./routes/metrics";
 import { queriesRouter } from "./routes/queries";
 import { replayRouter } from "./routes/replay";
+import { authRouter, requireAuth } from "./routes/auth";
 
 export const createApp = (): express.Express => {
   const app = express();
@@ -51,10 +52,11 @@ export const createApp = (): express.Express => {
   );
 
   app.use("/api", queriesRouter);
-  app.use("/api", healthRouter);
-  app.use("/api", metricsRouter);
-  app.use("/api", aiRouter);
-  app.use("/api", replayRouter);
+  app.use("/api", authRouter);
+  app.use("/api", requireAuth, healthRouter);
+  app.use("/api", requireAuth, metricsRouter);
+  app.use("/api", requireAuth, aiRouter);
+  app.use("/api", requireAuth, replayRouter);
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
   app.use((_req, res) => fail(res, 404, "NOT_FOUND", "Route not found"));
