@@ -26,3 +26,6 @@ export const verifySupabaseToken = async (token: string): Promise<{ userId: stri
     return null;
   }
 };
+
+/** Local testing only: AUTH_DISABLED=true skips auth. Never honoured in production. */
+export const devAuthBypass = (): boolean => process.env.AUTH_DISABLED === "true" && process.env.NODE_ENV !== "production";

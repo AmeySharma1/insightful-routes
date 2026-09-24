@@ -18,7 +18,7 @@ import { getReplicationLag } from "../../monitors/lag-monitor";
 import { addNode, checkHealth, getNodes, getPoolStats, removeNode } from "../../router/pool-manager";
 import { executeQuery, getQueryHistory, getQueryStats } from "../../router/query-router";
 import { getReplayStats, pauseReplay, replayQueries, resumeReplay, type ReplayStats } from "../../replay/replay";
-import { NotFoundError } from "../../utils/errors";
+import { NotFoundError, ValidationError, isAppError } from "../../utils/errors";
 import { MAX_SQL_LENGTH, parseWith } from "../../utils/validators";
 import { nowIso, uuid } from "../../utils/helpers";
 import { fail, ok } from "../response";
@@ -67,7 +67,7 @@ dashboardRouter.get("/nodes", wrap(async () => ({ nodes: await nodeView() })));
 const nodeBody = z.object({ name: z.string().regex(/^[a-z0-9-]{2,32}$/), host: z.string().min(1).max(255), port: z.number().int().min(1).max(65535), role: z.literal("replica").default("replica"), connectionString: z.string().optional() });
 dashboardRouter.post("/nodes", wrap(async (req) => {
   const b = parseWith(nodeBody, req.body);
-  if (getNodes().some((n) => n.id === b.name)) throw Object.assign(new Error("Node name already used"), { status: 409, code: "CONFLICT" });
+  if (getNodes().some((n) => n.id === b.name)) throw new ValidationError("Node name already used");
   addNode({ id: b.name, role: b.role, maxConnections: 10, connectionString: b.connectionString ?? `postgresql://${b.host}:${b.port}/postgres` });
   const h = await checkHealth(b.name);
   const node = (await nodeView()).find((n) => n.id === b.name);
@@ -133,7 +133,7 @@ dashboardRouter.post("/query/execute", async (req, res, next) => {
     ok(res, { results: b.useExplain ? [] : result.rows, rowCount: result.rowCount, executionTime: `${result.durationMs.toFixed(2)}ms`, routedTo: result.nodeId, ...(plan ? { queryPlan: plan } : {}) }, startedAt);
   } catch (e) {
     // SQL errors are user errors, not server errors
-    if (e instanceof Error && !(e as { status?: number }).status) return fail(res, 400, "QUERY_ERROR", e.message);
+    if (e instanceof Error && !isAppError(e)) return fail(res, 400, "QUERY_ERROR", e.message);
     next(e);
   }
 });
@@ -171,10 +171,10 @@ dashboardRouter.post("/anomalies/:id/acknowledge", wrap((req) => {
 
 /* ---------- replay ---------- */
 dashboardRouter.post("/replay/upload", upload.single("file"), wrap((req) => {
-  if (!req.file) throw Object.assign(new Error("No file uploaded (field name: file)"), { status: 422, code: "VALIDATION_ERROR" });
+  if (!req.file) throw new ValidationError("No file uploaded (field name: file)");
   const text = req.file.buffer.toString("utf8");
   const rows = text.split("\n").filter(Boolean).map((l: string) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean) as Record<string, unknown>[];
-  if (!rows.length) throw Object.assign(new Error("Expected JSON lines with sql, durationMs and timestamp"), { status: 422, code: "VALIDATION_ERROR" });
+  if (!rows.length) throw new ValidationError("Expected JSON lines with sql, durationMs and timestamp");
   const t0 = new Date(String(rows[0]!["timestamp"] ?? 0)).getTime() || 0;
   const normalized = rows.map((r) => JSON.stringify({
     sql: r["sql"] ?? r["query"], durationMs: Number(r["durationMs"] ?? r["duration"] ?? 5), rowCount: Number(r["rowCount"] ?? 0),

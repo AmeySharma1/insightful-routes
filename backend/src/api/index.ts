@@ -15,6 +15,7 @@ import { metricsRouter } from "./routes/metrics";
 import { queriesRouter } from "./routes/queries";
 import { replayRouter } from "./routes/replay";
 import { authRouter, requireAuth } from "./routes/auth";
+import { dashboardRouter } from "./routes/dashboard";
 import { ZodError } from "zod";
 
 export const createApp = (): express.Express => {
@@ -53,6 +54,7 @@ export const createApp = (): express.Express => {
   );
 
   app.use("/api", authRouter);
+  app.use("/api", requireAuth, dashboardRouter); // dashboard API (takes precedence)
   app.use("/api", requireAuth, queriesRouter);
   app.use("/api", requireAuth, healthRouter);
   app.use("/api", requireAuth, metricsRouter);
