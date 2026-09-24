@@ -40,17 +40,4 @@ CREATE TABLE IF NOT EXISTS refresh_sessions (
 CREATE INDEX IF NOT EXISTS refresh_sessions_user_idx ON refresh_sessions(user_id);
 CREATE INDEX IF NOT EXISTS refresh_sessions_family_idx ON refresh_sessions(family_id);
 
-CREATE TABLE IF NOT EXISTS otp_challenges (
-  id uuid PRIMARY KEY,
-  email text NOT NULL,
-  purpose text NOT NULL CHECK (purpose IN ('verify_email', 'password_reset')),
-  code_hash text NOT NULL,
-  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
-  attempts integer NOT NULL DEFAULT 0,
-  expires_at timestamptz NOT NULL,
-  consumed_at timestamptz,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS otp_challenges_lookup_idx ON otp_challenges(email, purpose, created_at DESC);
-
-REVOKE ALL ON app_users, profiles, user_roles, refresh_sessions, otp_challenges FROM PUBLIC;
+REVOKE ALL ON app_users, profiles, user_roles, refresh_sessions FROM PUBLIC;

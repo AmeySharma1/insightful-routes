@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
-import { login, refresh, requestReset, requestSignup, resetPassword, verifySignup } from "../../auth/service";
+import { login, logout, refresh, requestReset, requestSignup, resetPassword, verifySignup } from "../../auth/service";
 import { readRefreshCookie, refreshCookie, verifyAccessToken } from "../../auth/tokens";
 import { authRepository } from "../../auth/repository";
 import { fail, ok } from "../response";
@@ -12,7 +12,7 @@ authRouter.post("/auth/signup",async(req,res,next)=>{try{const d=schemas.signup.
 authRouter.post("/auth/verify",async(req,res,next)=>{try{const d=schemas.verify.parse(req.body),s=await verifySignup(d.email,d.code);res.setHeader("Set-Cookie",refreshCookie(s.refreshToken));ok(res,{accessToken:s.accessToken,user:s.user});}catch(e){next(e);}});
 authRouter.post("/auth/login",async(req,res,next)=>{try{const d=schemas.login.parse(req.body),s=await login(d.email,d.password);res.setHeader("Set-Cookie",refreshCookie(s.refreshToken));ok(res,{accessToken:s.accessToken,user:s.user});}catch(e){next(e);}});
 authRouter.post("/auth/refresh",async(req,res,next)=>{try{const raw=readRefreshCookie(req.headers.cookie);if(!raw)return fail(res,401,"UNAUTHORIZED","No refresh session");const s=await refresh(raw);res.setHeader("Set-Cookie",refreshCookie(s.refreshToken));ok(res,{accessToken:s.accessToken,user:s.user});}catch(e){next(e);}});
-authRouter.post("/auth/logout",(_req,res)=>{res.setHeader("Set-Cookie",refreshCookie("",0));ok(res,{signedOut:true});});
+authRouter.post("/auth/logout",async(req,res,next)=>{try{const raw=readRefreshCookie(req.headers.cookie);await logout(raw??undefined);res.setHeader("Set-Cookie",refreshCookie("",0));ok(res,{signedOut:true});}catch(e){next(e);}});
 authRouter.post("/auth/password/request",async(req,res,next)=>{try{const d=schemas.resetRequest.parse(req.body);await requestReset(d.email);ok(res,generic);}catch(e){next(e);}});
 authRouter.post("/auth/password/reset",async(req,res,next)=>{try{const d=schemas.reset.parse(req.body),s=await resetPassword(d.email,d.code,d.password);res.setHeader("Set-Cookie",refreshCookie(s.refreshToken));ok(res,{accessToken:s.accessToken,user:s.user});}catch(e){next(e);}});
 export interface AuthRequest extends Request { userId?:string }
