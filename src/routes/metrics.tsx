@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useSim } from "@/lib/sim";
+import { applyTimeseries, endpoints } from "@/lib/live";
 import { PageHeader, Panel, StatusDot, chartTheme } from "@/components/common";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Progress } from "@/components/ui/progress";
@@ -45,6 +46,12 @@ function Metrics() {
   const series = useSim((s) => s.series);
   const nodes = useSim((s) => s.nodes);
   const lagMax = useSim((s) => s.thresholds.lagMs);
+  const live = useSim((s) => s.source === "live");
+  useEffect(() => {
+    if (!live) return;
+    const end = Date.now();
+    endpoints.timeseries(end - RANGES[range] * 2000, end, "2s").then(applyTimeseries).catch(() => {});
+  }, [range, live]);
   const data = series.slice(-RANGES[range]).map((p) => ({ ...p, label: fmtTime(p.t) }));
 
   return (

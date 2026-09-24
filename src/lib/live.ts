@@ -57,7 +57,7 @@ function applyDashboard(d: DashboardRes) {
   sim.hydrate({ series: series.slice(-180), slow });
 }
 
-function applyTimeseries(ts: TimeseriesRes) {
+export function applyTimeseries(ts: TimeseriesRes) {
   const byT = new Map<number, MetricPoint>();
   const base = lastPoint();
   const put = (pts: Point[], k: keyof MetricPoint) => pts.forEach((p) => {
