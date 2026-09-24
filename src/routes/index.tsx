@@ -26,7 +26,7 @@ function Dashboard() {
   const slow = useSim((s) => s.slow);
   const alerts = useSim((s) => s.alerts);
   const [drill, setDrill] = useState<string | null>(null);
-  const last = series[series.length - 1];
+  const last = series[series.length - 1]!;
   const conns = nodes.reduce((a, n) => a + n.connections, 0);
   const pie = nodes.map((n) => ({ name: n.id, value: n.queriesRouted }));
   const colors = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-4)"];

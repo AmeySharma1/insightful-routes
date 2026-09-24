@@ -41,7 +41,7 @@ export function Panel({ title, action, children, className }: { title?: string; 
   );
 }
 
-export function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "success" | "warning" | "destructive" }) {
+export function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string | undefined; tone?: "success" | "warning" | "destructive" | undefined }) {
   return (
     <Card className="gap-1 p-4">
       <div className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>

@@ -39,7 +39,7 @@ function useCollab(initial: string) {
 
   useEffect(() => {
     const i = Math.floor(Math.random() * NAMES.length);
-    const self: Peer = { id: Math.random().toString(36).slice(2), name: NAMES[i], color: COLORS[i % COLORS.length], pos: 0, seen: Date.now() };
+    const self: Peer = { id: Math.random().toString(36).slice(2), name: NAMES[i]!, color: COLORS[i % COLORS.length]!, pos: 0, seen: Date.now() };
     setMe(self);
     const c = new BroadcastChannel("pg-router-editor");
     ch.current = c;
@@ -82,7 +82,7 @@ function highlight(sql: string) {
 interface Result { columns: string[]; rows: Record<string, unknown>[]; node: string; reason: string; ms: number; plan?: PlanNode; messages: string[] }
 
 function Explorer() {
-  const collab = useCollab(sim.sampleQueries[0] + ";");
+  const collab = useCollab(sim.sampleQueries[0]! + ";");
   const [result, setResult] = useState<Result | null>(null);
   const [tab, setTab] = useState("results");
   const [running, setRunning] = useState(false);

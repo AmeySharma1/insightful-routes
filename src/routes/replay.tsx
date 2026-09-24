@@ -29,7 +29,7 @@ function demoCapture(): Captured[] {
   let off = 0;
   return Array.from({ length: 120 }, () => {
     off += Math.random() * 400;
-    return { sql: sim.sampleQueries[Math.floor(Math.random() * sim.sampleQueries.length)], durationMs: 2 + Math.random() * 60, offsetMs: off };
+    return { sql: sim.sampleQueries[Math.floor(Math.random() * sim.sampleQueries.length)]!, durationMs: 2 + Math.random() * 60, offsetMs: off };
   });
 }
 
