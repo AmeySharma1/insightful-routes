@@ -68,7 +68,7 @@ export const scoreComplexity = (sql: string, tables: string[]): number => {
   const lower = sql.toLowerCase();
   let score = Math.min(20, tables.length * 5);
   score += (lower.match(/\bjoin\b/g)?.length ?? 0) * 8;
-  score += (lower.match(/\bselect\b/g)?.length - 1 || 0) * 10; // subqueries
+  score += Math.max(0, (lower.match(/\bselect\b/g)?.length ?? 1) - 1) * 10; // subqueries
   score += /\bgroup\s+by\b/.test(lower) ? 6 : 0;
   score += /\border\s+by\b/.test(lower) ? 4 : 0;
   score += /\bdistinct\b/.test(lower) ? 4 : 0;

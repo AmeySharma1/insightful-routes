@@ -9,7 +9,9 @@ export const metricsRouter = Router();
 metricsRouter.get("/metrics", async (req, res, next) => {
   const startedAt = Date.now();
   try {
-    const { windowMs, metric } = parseWith(metricsQuerySchema, req.query);
+    const parsedQuery = parseWith(metricsQuerySchema, req.query);
+    const windowMs = parsedQuery.windowMs ?? 300_000;
+    const metric = parsedQuery.metric ?? "duration";
     ok(
       res,
       {
