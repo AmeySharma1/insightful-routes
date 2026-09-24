@@ -6,16 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader, Panel } from "@/components/common";
 import { QueryVisualizer } from "@/components/QueryVisualizer";
-import { analyze, routeFor, simulatePlan, simulateRows, type PlanNode, type Suggestion } from "@/lib/plan";
+import { parseExplainJson, analyze, routeFor, simulatePlan, simulateRows, type PlanNode, type Suggestion } from "@/lib/plan";
 import { fmtMs, fmtTime } from "@/lib/format";
 import { sim, useSim } from "@/lib/sim";
 import { api, errorMessage } from "@/lib/api";
 import { socketService } from "@/lib/socket";
-import { parseExplainJson } from "@/lib/plan";
 import { useAIAnalysis, useAction } from "@/hooks/use-backend";
 import { Input } from "@/components/ui/input";
 import { Loader2, Wand2 } from "lucide-react";
 
+function toPlan(raw: unknown, sql: string): PlanNode {
+  if (!raw) return simulatePlan(sql);
+  try { return parseExplainJson(raw); } catch { return (raw as PlanNode).type ? (raw as PlanNode) : simulatePlan(sql); }
+}
 const ROOM = "query-editor-default";
 interface ExecRes { results: Record<string, unknown>[]; rowCount: number; executionTime: string; routedTo: string; queryPlan?: unknown }
 interface HistoryRes { queries: { id: string; sql: string; executedAt: string; duration: number | string; status: string }[] }
@@ -134,7 +137,7 @@ function Explorer() {
       const columns = rows[0] ? Object.keys(rows[0]) : ["rows_affected"];
       setResult({
         columns, rows: rows.length ? rows : [{ rows_affected: r.rowCount }], node: r.routedTo, reason: "routed by backend",
-        ms: parseFloat(r.executionTime) || 0, plan: r.queryPlan ? parseExplainJson(r.queryPlan) : simulatePlan(collab.text),
+        ms: parseFloat(r.executionTime) || 0, plan: toPlan(r.queryPlan, collab.text),
         messages: [`[${fmtTime(Date.now())}] routed to ${r.routedTo}`, `[${fmtTime(Date.now())}] ${r.rowCount} rows · ${r.executionTime}`],
       });
       setTab(explain ? "plan" : "results");
