@@ -11,9 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnomaliesRouteImport } from './routes/anomalies'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as MetricsRouteImport } from './routes/metrics'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ProductRouteImport } from './routes/product'
 import { Route as ReplayRouteImport } from './routes/replay'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SettingsRouteImport } from './routes/settings'
 
 const IndexRoute = IndexRouteImport.update({
@@ -26,6 +32,16 @@ const AnomaliesRoute = AnomaliesRouteImport.update({
   path: '/anomalies',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExplorerRoute = ExplorerRouteImport.update({
   id: '/explorer',
   path: '/explorer',
@@ -36,9 +52,29 @@ const MetricsRoute = MetricsRouteImport.update({
   path: '/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductRoute = ProductRouteImport.update({
+  id: '/product',
+  path: '/product',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReplayRoute = ReplayRouteImport.update({
   id: '/replay',
   path: '/replay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -50,50 +86,103 @@ const SettingsRoute = SettingsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
   '/replay': typeof ReplayRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
   '/replay': typeof ReplayRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
   '/replay': typeof ReplayRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/anomalies' | '/explorer' | '/metrics' | '/replay' | '/settings'
+    | '/'
+    | '/anomalies'
+    | '/auth'
+    | '/dashboard'
+    | '/explorer'
+    | '/metrics'
+    | '/pricing'
+    | '/product'
+    | '/replay'
+    | '/reset-password'
+    | '/security'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/anomalies' | '/explorer' | '/metrics' | '/replay' | '/settings'
+  to:
+    | '/'
+    | '/anomalies'
+    | '/auth'
+    | '/dashboard'
+    | '/explorer'
+    | '/metrics'
+    | '/pricing'
+    | '/product'
+    | '/replay'
+    | '/reset-password'
+    | '/security'
+    | '/settings'
   id:
     | '__root__'
     | '/'
     | '/anomalies'
+    | '/auth'
+    | '/dashboard'
     | '/explorer'
     | '/metrics'
+    | '/pricing'
+    | '/product'
     | '/replay'
+    | '/reset-password'
+    | '/security'
     | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnomaliesRoute: typeof AnomaliesRoute
+  AuthRoute: typeof AuthRoute
+  DashboardRoute: typeof DashboardRoute
   ExplorerRoute: typeof ExplorerRoute
   MetricsRoute: typeof MetricsRoute
+  PricingRoute: typeof PricingRoute
+  ProductRoute: typeof ProductRoute
   ReplayRoute: typeof ReplayRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SecurityRoute: typeof SecurityRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -113,6 +202,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnomaliesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explorer': {
       id: '/explorer'
       path: '/explorer'
@@ -127,11 +230,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/product': {
+      id: '/product'
+      path: '/product'
+      fullPath: '/product'
+      preLoaderRoute: typeof ProductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/replay': {
       id: '/replay'
       path: '/replay'
       fullPath: '/replay'
       preLoaderRoute: typeof ReplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -147,9 +278,15 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnomaliesRoute: AnomaliesRoute,
+  AuthRoute: AuthRoute,
+  DashboardRoute: DashboardRoute,
   ExplorerRoute: ExplorerRoute,
   MetricsRoute: MetricsRoute,
+  PricingRoute: PricingRoute,
+  ProductRoute: ProductRoute,
   ReplayRoute: ReplayRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SecurityRoute: SecurityRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport

@@ -4,15 +4,18 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { refreshSession } from "@/lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -90,7 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
@@ -116,14 +119,31 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const path = useRouterState({ select: (state) => state.location.pathname });
+  const publicPaths = ["/", "/product", "/security", "/pricing", "/auth", "/reset-password"];
+  const content = publicPaths.includes(path) ? <Outlet /> : <ProtectedApp><Outlet /></ProtectedApp>;
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <AppShell>
-        <Outlet />
-      </AppShell>
-      <Toaster theme="dark" />
+      {content}
+      <Toaster theme="light" />
     </QueryClientProvider>
   );
+}
+
+function ProtectedApp({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void refreshSession().then((user) => {
+      if (!active) return;
+      if (!user) void navigate({ to: "/auth", search: { mode: "login" }, replace: true });
+      else setReady(true);
+    });
+    return () => { active = false; };
+  }, [navigate]);
+  if (!ready) return <div className="mosaic grid min-h-screen place-items-center"><span className="tech-label text-primary">VERIFYING SESSION…</span></div>;
+  return <AppShell>{children}</AppShell>;
 }

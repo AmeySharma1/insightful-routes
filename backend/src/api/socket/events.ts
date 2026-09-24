@@ -7,20 +7,18 @@ import { executeQuery } from "../../router/query-router";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "../../types/socket";
 import { logger } from "../../utils/logger";
 import { uuid } from "../../utils/helpers";
+import { verifyAccessToken } from "../../auth/tokens";
 
 type AppSocket = Socket<ClientToServerEvents, ServerToClientEvents, never, SocketData>;
 
 let io: Server<ClientToServerEvents, ServerToClientEvents, never, SocketData> | null = null;
 
-/** Minimal JWT-style handshake check: clients send a token in handshake.auth. */
+/** Fully verifies signed, unexpired access tokens from the handshake. */
 const verifyHandshake = (token: unknown): { userId: string | null; ok: boolean } => {
-  if (appConfig.env !== "production") return { userId: "dev", ok: true };
   if (typeof token !== "string" || !token.length) return { userId: null, ok: false };
-  const [, payload, signature] = token.split(".");
-  if (!payload || !signature) return { userId: null, ok: false };
   try {
-    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { sub?: string };
-    return { userId: decoded.sub ?? null, ok: Boolean(decoded.sub) };
+    const decoded = verifyAccessToken(token);
+    return { userId: typeof decoded.sub === "string" ? decoded.sub : null, ok: typeof decoded.sub === "string" };
   } catch {
     return { userId: null, ok: false };
   }

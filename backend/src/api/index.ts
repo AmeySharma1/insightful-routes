@@ -14,12 +14,14 @@ import { healthRouter } from "./routes/health";
 import { metricsRouter } from "./routes/metrics";
 import { queriesRouter } from "./routes/queries";
 import { replayRouter } from "./routes/replay";
+import { authRouter, requireAuth } from "./routes/auth";
+import { ZodError } from "zod";
 
 export const createApp = (): express.Express => {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: appConfig.corsOrigin }));
+  app.use(cors({ origin: appConfig.corsOrigin, credentials: true }));
   app.use(express.json({ limit: "1mb" }));
 
   app.use((req, res, next) => {
@@ -50,16 +52,20 @@ export const createApp = (): express.Express => {
     }),
   );
 
-  app.use("/api", queriesRouter);
-  app.use("/api", healthRouter);
-  app.use("/api", metricsRouter);
-  app.use("/api", aiRouter);
-  app.use("/api", replayRouter);
+  app.use("/api", authRouter);
+  app.use("/api", requireAuth, queriesRouter);
+  app.use("/api", requireAuth, healthRouter);
+  app.use("/api", requireAuth, metricsRouter);
+  app.use("/api", requireAuth, aiRouter);
+  app.use("/api", requireAuth, replayRouter);
   app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
   app.use((_req, res) => fail(res, 404, "NOT_FOUND", "Route not found"));
 
   app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    if (error instanceof ZodError) {
+      return fail(res, 422, "VALIDATION_ERROR", "Invalid request", error.flatten());
+    }
     if (isAppError(error)) {
       return fail(res, error.status, error.code, error.message, error.details);
     }

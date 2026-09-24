@@ -14,6 +14,8 @@ export const Route = createFileRoute("/metrics")({
       { name: "description", content: "Time-series throughput, latency, errors, node health and replica lag." },
       { property: "og:title", content: "Metrics — pg-router-ai" },
       { property: "og:description", content: "Time-series throughput, latency, errors, node health and replica lag." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Metrics,

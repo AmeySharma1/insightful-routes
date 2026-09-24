@@ -17,6 +17,8 @@ export const Route = createFileRoute("/replay")({
       { name: "description", content: "Replay captured production traffic against a target database and compare results." },
       { property: "og:title", content: "Query Replay — pg-router-ai" },
       { property: "og:description", content: "Replay captured production traffic against a target database and compare results." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Replay,
