@@ -68,7 +68,7 @@ const nodeBody = z.object({ name: z.string().regex(/^[a-z0-9-]{2,32}$/), host: z
 dashboardRouter.post("/nodes", wrap(async (req) => {
   const b = parseWith(nodeBody, req.body);
   if (getNodes().some((n) => n.id === b.name)) throw new ValidationError("Node name already used");
-  addNode({ id: b.name, role: b.role, maxConnections: 10, connectionString: b.connectionString ?? `postgresql://${b.host}:${b.port}/postgres` });
+  addNode({ id: b.name, role: "replica", maxConnections: 10, connectionString: b.connectionString ?? `postgresql://${b.host}:${b.port}/postgres` });
   const h = await checkHealth(b.name);
   const node = (await nodeView()).find((n) => n.id === b.name);
   return { node, status: h.healthy ? "connected" : "connection_failed" };
