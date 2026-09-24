@@ -9,21 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnomaliesRouteImport } from './routes/anomalies'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as MetricsRouteImport } from './routes/metrics'
 import { Route as ReplayRouteImport } from './routes/replay'
 import { Route as SettingsRouteImport } from './routes/settings'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AnomaliesRoute = AnomaliesRouteImport.update({
   id: '/anomalies',
   path: '/anomalies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExplorerRoute = ExplorerRouteImport.update({
@@ -48,16 +48,16 @@ const SettingsRoute = SettingsRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
+  '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
   '/replay': typeof ReplayRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
+  '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
   '/replay': typeof ReplayRoute
@@ -65,8 +65,8 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
+  '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
   '/replay': typeof ReplayRoute
@@ -75,13 +75,24 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/anomalies' | '/explorer' | '/metrics' | '/replay' | '/settings'
+    | '/anomalies'
+    | '/dashboard'
+    | '/explorer'
+    | '/metrics'
+    | '/replay'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/anomalies' | '/explorer' | '/metrics' | '/replay' | '/settings'
+  to:
+    | '/anomalies'
+    | '/dashboard'
+    | '/explorer'
+    | '/metrics'
+    | '/replay'
+    | '/settings'
   id:
     | '__root__'
-    | '/'
     | '/anomalies'
+    | '/dashboard'
     | '/explorer'
     | '/metrics'
     | '/replay'
@@ -89,8 +100,8 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AnomaliesRoute: typeof AnomaliesRoute
+  DashboardRoute: typeof DashboardRoute
   ExplorerRoute: typeof ExplorerRoute
   MetricsRoute: typeof MetricsRoute
   ReplayRoute: typeof ReplayRoute
@@ -99,18 +110,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/anomalies': {
       id: '/anomalies'
       path: '/anomalies'
       fullPath: '/anomalies'
       preLoaderRoute: typeof AnomaliesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explorer': {
@@ -145,8 +156,8 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AnomaliesRoute: AnomaliesRoute,
+  DashboardRoute: DashboardRoute,
   ExplorerRoute: ExplorerRoute,
   MetricsRoute: MetricsRoute,
   ReplayRoute: ReplayRoute,
