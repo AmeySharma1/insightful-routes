@@ -9,13 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnomaliesRouteImport } from './routes/anomalies'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as MetricsRouteImport } from './routes/metrics'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ProductRouteImport } from './routes/product'
 import { Route as ReplayRouteImport } from './routes/replay'
+import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SettingsRouteImport } from './routes/settings'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnomaliesRoute = AnomaliesRouteImport.update({
   id: '/anomalies',
   path: '/anomalies',
@@ -36,9 +45,24 @@ const MetricsRoute = MetricsRouteImport.update({
   path: '/metrics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductRoute = ProductRouteImport.update({
+  id: '/product',
+  path: '/product',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReplayRoute = ReplayRouteImport.update({
   id: '/replay',
   path: '/replay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -48,68 +72,103 @@ const SettingsRoute = SettingsRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
   '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
   '/replay': typeof ReplayRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
   '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
   '/replay': typeof ReplayRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/anomalies': typeof AnomaliesRoute
   '/dashboard': typeof DashboardRoute
   '/explorer': typeof ExplorerRoute
   '/metrics': typeof MetricsRoute
+  '/pricing': typeof PricingRoute
+  '/product': typeof ProductRoute
   '/replay': typeof ReplayRoute
+  '/security': typeof SecurityRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/anomalies'
     | '/dashboard'
     | '/explorer'
     | '/metrics'
+    | '/pricing'
+    | '/product'
     | '/replay'
+    | '/security'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/anomalies'
     | '/dashboard'
     | '/explorer'
     | '/metrics'
+    | '/pricing'
+    | '/product'
     | '/replay'
+    | '/security'
     | '/settings'
   id:
     | '__root__'
+    | '/'
     | '/anomalies'
     | '/dashboard'
     | '/explorer'
     | '/metrics'
+    | '/pricing'
+    | '/product'
     | '/replay'
+    | '/security'
     | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AnomaliesRoute: typeof AnomaliesRoute
   DashboardRoute: typeof DashboardRoute
   ExplorerRoute: typeof ExplorerRoute
   MetricsRoute: typeof MetricsRoute
+  PricingRoute: typeof PricingRoute
+  ProductRoute: typeof ProductRoute
   ReplayRoute: typeof ReplayRoute
+  SecurityRoute: typeof SecurityRoute
   SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/anomalies': {
       id: '/anomalies'
       path: '/anomalies'
@@ -138,11 +197,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MetricsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/product': {
+      id: '/product'
+      path: '/product'
+      fullPath: '/product'
+      preLoaderRoute: typeof ProductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/replay': {
       id: '/replay'
       path: '/replay'
       fullPath: '/replay'
       preLoaderRoute: typeof ReplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -156,11 +236,15 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AnomaliesRoute: AnomaliesRoute,
   DashboardRoute: DashboardRoute,
   ExplorerRoute: ExplorerRoute,
   MetricsRoute: MetricsRoute,
+  PricingRoute: PricingRoute,
+  ProductRoute: ProductRoute,
   ReplayRoute: ReplayRoute,
+  SecurityRoute: SecurityRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport

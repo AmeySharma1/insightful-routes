@@ -9,7 +9,7 @@ import { useSim } from "@/lib/sim";
 import { StatusDot } from "@/components/common";
 
 const items = [
-  { title: "Dashboard", url: "/", icon: Gauge },
+  { title: "Dashboard", url: "/dashboard", icon: Gauge },
   { title: "Query Explorer", url: "/explorer", icon: Code2 },
   { title: "Metrics", url: "/metrics", icon: Activity },
   { title: "Anomalies", url: "/anomalies", icon: AlertTriangle },
@@ -35,7 +35,7 @@ function Shell({ children }: { children: ReactNode }) {
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="grid size-7 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><Database className="size-4" /></div>
-              <span className="font-mono text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">pg-router-ai</span>
+               <span className="font-display text-sm font-semibold group-data-[collapsible=icon]:hidden">pg-router-ai</span>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -82,7 +82,7 @@ function Shell({ children }: { children: ReactNode }) {
               {connected ? "live · simulated" : "paused"}
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="mosaic flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>
