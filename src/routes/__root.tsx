@@ -120,7 +120,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const path = useRouterState({ select: (state) => state.location.pathname });
-  const publicPaths = ["/", "/product", "/security", "/pricing", "/auth", "/reset-password"];
+  const publicPaths = ["/", "/product", "/security", "/pricing", "/auth", "/auth/callback", "/reset-password"];
   const content = publicPaths.includes(path) ? <Outlet /> : <ProtectedApp><Outlet /></ProtectedApp>;
 
   return (

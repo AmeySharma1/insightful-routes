@@ -1,9 +1,26 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface SessionUser { id:string; email:string; displayName:string; avatarUrl:string|null; preferences:Record<string,unknown>; role:"admin"|"operator"|"viewer" }
 let accessToken:string|null=null;
 const listeners=new Set<()=>void>();
 export const authStore={get token(){return accessToken},set(token:string|null){accessToken=token;for(const l of listeners)l();},subscribe(listener:()=>void){listeners.add(listener);return()=>listeners.delete(listener)}};
-interface ApiEnvelope<T>{success:boolean;data?:T;error?:{message:string}}
-const apiBase=()=>`${import.meta.env['VITE_API_URL']??"http://localhost:3000"}/api`;
-async function request<T>(path:string,body:unknown,method:string,allowRefresh:boolean){const init:RequestInit={method,credentials:"include",headers:{"content-type":"application/json",...(accessToken?{authorization:`Bearer ${accessToken}`}:{})}};if(body!==undefined)init.body=JSON.stringify(body);let response=await fetch(`${apiBase()}${path}`,init);if(response.status===401&&allowRefresh&&path!=="/auth/refresh"){const renewed=await refreshSession();if(renewed){const retryHeaders={...init.headers,authorization:`Bearer ${authStore.token}`};response=await fetch(`${apiBase()}${path}`,{...init,headers:retryHeaders});}}const result=await response.json() as ApiEnvelope<T>;if(!response.ok||!result.success)throw new Error(result.error?.message??"Request failed");return result.data as T;}
-export async function authRequest<T>(path:string,body?:unknown,method="POST"){return request<T>(path,body,method,true);}
-export async function refreshSession(){try{const data=await request<{accessToken:string;user:SessionUser}>("/auth/refresh",undefined,"POST",false);authStore.set(data.accessToken);return data.user;}catch{authStore.set(null);return null;}}
+
+async function toSessionUser():Promise<SessionUser|null>{
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session?.user?.email){authStore.set(null);return null;}
+  authStore.set(session.access_token);
+  const displayName=String(session.user.user_metadata?.display_name??session.user.email.split("@")[0]);
+  const {data:profile}=await supabase.from("profiles").select("display_name,avatar_url,preferences").eq("user_id",session.user.id).maybeSingle();
+  if(!profile){await supabase.from("profiles").insert({user_id:session.user.id,display_name:displayName});}
+  return {id:session.user.id,email:session.user.email,displayName:profile?.display_name??displayName,avatarUrl:profile?.avatar_url??null,preferences:(profile?.preferences as Record<string,unknown>|null)??{},role:"viewer"};
+}
+
+export async function signUp(email:string,password:string,displayName:string){
+  const {error}=await supabase.auth.signUp({email,password,options:{data:{display_name:displayName},emailRedirectTo:`${window.location.origin}/auth/callback`}});
+  if(error)throw new Error(error.message);
+}
+export async function signIn(email:string,password:string){const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw new Error(error.message);return toSessionUser();}
+export async function requestPasswordReset(email:string){const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}/reset-password?recovery=1`});if(error)throw new Error(error.message);}
+export async function updatePassword(password:string){const {error}=await supabase.auth.updateUser({password});if(error)throw new Error(error.message);return toSessionUser();}
+export async function signOut(){await supabase.auth.signOut({scope:"local"});authStore.set(null);}
+export async function refreshSession(){try{return await toSessionUser();}catch{authStore.set(null);return null;}}
