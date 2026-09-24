@@ -1,0 +1,21 @@
+export const openApiDocument = {
+  openapi: "3.0.3",
+  info: { title: "pg-router-ai API", version: "1.0.0", description: "AI-powered PostgreSQL query routing and observability" },
+  servers: [{ url: "/api" }],
+  paths: {
+    "/query": { post: { summary: "Route and execute a SQL statement", responses: { "200": { description: "OK" } } } },
+    "/query/explain": { post: { summary: "Routing decision without execution", responses: { "200": { description: "OK" } } } },
+    "/queries": { get: { summary: "Recent query history and routing stats", responses: { "200": { description: "OK" } } } },
+    "/health": { get: { summary: "System status", responses: { "200": { description: "OK" } } } },
+    "/nodes": { get: { summary: "Database nodes, pools and replica lag", responses: { "200": { description: "OK" } } } },
+    "/metrics": { get: { summary: "Metrics snapshot and time series", responses: { "200": { description: "OK" } } } },
+    "/slow-queries": { get: { summary: "Slowest recent queries", responses: { "200": { description: "OK" } } } },
+    "/ai/optimize": { post: { summary: "AI optimization suggestions", responses: { "200": { description: "OK" } } } },
+    "/ai/convert": { post: { summary: "Natural language to SQL", responses: { "200": { description: "OK" } } } },
+    "/ai/patterns": { get: { summary: "Learned query patterns", responses: { "200": { description: "OK" } } } },
+    "/replay/start": { post: { summary: "Start a replay run", responses: { "200": { description: "OK" } } } },
+    "/replay/status": { get: { summary: "Capture and replay status", responses: { "200": { description: "OK" } } } },
+    "/replay/capture/start": { post: { summary: "Start query capture", responses: { "200": { description: "OK" } } } },
+    "/replay/capture/stop": { post: { summary: "Stop query capture", responses: { "200": { description: "OK" } } } },
+  },
+} as const;
