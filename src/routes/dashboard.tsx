@@ -8,7 +8,7 @@ import { QueryVisualizer } from "@/components/QueryVisualizer";
 import { simulatePlan } from "@/lib/plan";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — pg-router-ai" },
