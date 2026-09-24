@@ -11,6 +11,8 @@ interface Events {
   "anomaly:detected": (alert: AnomalyAlert) => void;
   "health:updated": (nodes: NodeHealth[]) => void;
   "query:executed": (query: ExecutedQuery) => void;
+  "replay:progress": (p: { replayId: string; current: number; total: number; currentQuery?: { sql: string; startTime: string } }) => void;
+  "replay:complete": (p: { replayId: string; summary: { totalQueries: number; avgLatency: number; errors: number; mismatches: number } }) => void;
   "lag:exceeded": (payload: { nodeId: string; lagMs: number; thresholdMs: number }) => void;
 }
 

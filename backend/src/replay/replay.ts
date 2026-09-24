@@ -6,6 +6,7 @@ import { NotFoundError } from "../utils/errors";
 import { average, nowIso, safeJsonParse, sleep, uuid } from "../utils/helpers";
 import { logger } from "../utils/logger";
 import type { CapturedQuery } from "./capture";
+import { bus } from "../events";
 
 export type ReplaySpeed = 0.5 | 1 | 2 | 10;
 
@@ -23,7 +24,8 @@ export interface ReplayStats {
   runId: string;
   file: string;
   speed: ReplaySpeed;
-  status: "running" | "completed" | "failed";
+  status: "running" | "paused" | "completed" | "failed";
+  currentQuery?: { sql: string; startTime: string };
   total: number;
   executed: number;
   failed: number;
@@ -37,6 +39,10 @@ export interface ReplayStats {
 }
 
 const runs = new Map<string, ReplayStats>();
+const paused = new Set<string>();
+export const pauseReplay = (runId: string): ReplayStats => { const r = getRun(runId); if (r.status === "running") { paused.add(runId); r.status = "paused"; } return r; };
+export const resumeReplay = (runId: string): ReplayStats => { const r = getRun(runId); if (paused.delete(runId)) r.status = "running"; return r; };
+const getRun = (runId: string): ReplayStats => { const r = runs.get(runId); if (!r) throw new NotFoundError(`Replay run not found: ${runId}`); return r; };
 
 const loadCapture = (file: string, limit?: number): CapturedQuery[] => {
   const resolved = path.isAbsolute(file) ? file : path.resolve(appConfig.captureDir, file);
@@ -83,10 +89,13 @@ export const replayQueries = (options: ReplayOptions): ReplayStats => {
     let previousOffset = queries[0]?.offsetMs ?? 0;
 
     for (const query of queries) {
+      while (paused.has(runId)) await sleep(250);
       const wait = Math.max(0, (query.offsetMs - previousOffset) / speed);
       previousOffset = query.offsetMs;
       if (wait > 0) await sleep(Math.min(wait, 30_000));
 
+      stats.currentQuery = { sql: query.sql, startTime: nowIso() };
+      bus.emitEvent("replay:progress", { replayId: runId, current: stats.executed + stats.failed, total: stats.total, currentQuery: stats.currentQuery });
       try {
         const { result } = await executeQuery(query.sql, [], { sessionId: `replay-${runId}` });
         stats.executed += 1;
@@ -108,6 +117,8 @@ export const replayQueries = (options: ReplayOptions): ReplayStats => {
 
     stats.status = "completed";
     stats.finishedAt = nowIso();
+    delete stats.currentQuery;
+    bus.emitEvent("replay:complete", { replayId: runId, summary: { totalQueries: stats.total, avgLatency: stats.avgReplayMs, errors: stats.failed, mismatches: stats.mismatches } });
     logger.info("Replay finished", { runId, executed: stats.executed, failed: stats.failed });
   })().catch((error) => {
     stats.status = "failed";

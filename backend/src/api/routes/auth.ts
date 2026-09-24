@@ -1,3 +1,4 @@
+import { verifySupabaseToken } from "../../auth/supabase";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { login, logout, refresh, requestReset, requestSignup, resetPassword, verifySignup } from "../../auth/service";
@@ -16,5 +17,5 @@ authRouter.post("/auth/logout",async(req,res,next)=>{try{const raw=readRefreshCo
 authRouter.post("/auth/password/request",async(req,res,next)=>{try{const d=schemas.resetRequest.parse(req.body);await requestReset(d.email);ok(res,generic);}catch(e){next(e);}});
 authRouter.post("/auth/password/reset",async(req,res,next)=>{try{const d=schemas.reset.parse(req.body),s=await resetPassword(d.email,d.code,d.password);res.setHeader("Set-Cookie",refreshCookie(s.refreshToken));ok(res,{accessToken:s.accessToken,user:s.user});}catch(e){next(e);}});
 export interface AuthRequest extends Request { userId?:string }
-export async function requireAuth(req:AuthRequest,res:Response,next:NextFunction){try{const token=req.headers.authorization?.replace(/^Bearer\s+/i,"");if(!token)return fail(res,401,"UNAUTHORIZED","Access token required");const payload=verifyAccessToken(token);if(typeof payload.sub!=="string"||!await authRepository.findUserById(payload.sub))return fail(res,401,"UNAUTHORIZED","Invalid access token");req.userId=payload.sub;next();}catch{return fail(res,401,"UNAUTHORIZED","Invalid or expired access token");}}
+export async function requireAuth(req:AuthRequest,res:Response,next:NextFunction){try{const token=req.headers.authorization?.replace(/^Bearer\s+/i,"");if(!token)return fail(res,401,"UNAUTHORIZED","Access token required");const hosted=await verifySupabaseToken(token);if(hosted){req.userId=hosted.userId;return next();}const payload=verifyAccessToken(token);if(typeof payload.sub!=="string"||!await authRepository.findUserById(payload.sub))return fail(res,401,"UNAUTHORIZED","Invalid access token");req.userId=payload.sub;next();}catch{return fail(res,401,"UNAUTHORIZED","Invalid or expired access token");}}
 authRouter.get("/auth/me",requireAuth,async(req:AuthRequest,res)=>{const user=await authRepository.findUserById(req.userId??"");if(!user)return fail(res,404,"NOT_FOUND","Account not found");ok(res,{id:user.id,email:user.email,displayName:user.displayName,avatarUrl:user.avatarUrl,preferences:user.preferences,role:user.role});});

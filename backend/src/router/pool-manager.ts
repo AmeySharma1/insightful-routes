@@ -45,6 +45,29 @@ export const getNodes = (): DatabaseNode[] => {
   return [...nodes.values()].map((n) => n.node);
 };
 
+/** Register a new node at runtime (Settings → Add node). */
+export const addNode = (node: DatabaseNode): void => {
+  init();
+  nodes.set(node.id, {
+    node,
+    pool: databaseConfig.simulate ? null : new Pool({ connectionString: node.connectionString, max: node.maxConnections, statement_timeout: databaseConfig.statementTimeoutMs }),
+    simulated: databaseConfig.simulate ? new SimulatedClient(node) : null,
+    healthy: true,
+    lagMs: node.role === "replica" ? 0 : null,
+  });
+  logger.info("Node added", { nodeId: node.id });
+};
+
+/** Remove a replica at runtime; the primary cannot be removed. */
+export const removeNode = async (nodeId: string): Promise<boolean> => {
+  init();
+  const managed = nodes.get(nodeId);
+  if (!managed || managed.node.role === "primary") return false;
+  nodes.delete(nodeId);
+  await managed.pool?.end().catch(() => undefined);
+  return true;
+};
+
 export const getPrimary = (): ManagedNode => {
   init();
   const primary = [...nodes.values()].find((n) => n.node.role === "primary");
