@@ -58,6 +58,8 @@ const SAMPLE_QUERIES = [
   "SELECT p.*, c.name FROM products p JOIN categories c ON c.id = p.category_id WHERE c.slug = $1",
 ];
 
+export type DataSource = "simulated" | "connecting" | "live" | "stale";
+
 interface State {
   nodes: DbNode[];
   series: MetricPoint[];
@@ -65,6 +67,9 @@ interface State {
   slow: SlowQuery[];
   connected: boolean;
   thresholds: { slowMs: number; lagMs: number; window: number };
+  source: DataSource;
+  lastUpdated: number | null;
+  error: string | null;
 }
 
 let seq = 0;
@@ -84,6 +89,9 @@ function initial(): State {
   slow.sort((a, b) => b.t - a.t);
   return {
     connected: true,
+    source: "simulated",
+    lastUpdated: null,
+    error: null,
     thresholds: { slowMs: 100, lagMs: 1000, window: 1000 },
     series,
     alerts,
@@ -138,7 +146,7 @@ function set(patch: Partial<State>) {
 
 function tick() {
   const s = get();
-  if (!s.connected) return;
+  if (!s.connected || s.source !== "simulated") return;
   const last = s.series[s.series.length - 1];
   const p = point(Date.now(), last);
   const series = [...s.series.slice(-179), p];
@@ -195,6 +203,10 @@ export const sim = {
   setNodes(nodes: DbNode[]) {
     set({ nodes });
   },
+  hydrate(patch: Partial<State>) {
+    set(patch);
+  },
   get,
+  subscribe,
   sampleQueries: SAMPLE_QUERIES,
 };
